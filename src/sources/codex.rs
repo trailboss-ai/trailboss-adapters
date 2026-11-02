@@ -69,6 +69,10 @@ pub fn parse(path: &Path, bytes: &[u8]) -> Batch {
                 b.session.cwd = b.session.cwd.take().or_else(|| text_at(&p["cwd"]));
                 b.session.git_branch = text_at(&p["git"]["branch"]);
                 provider = text_at(&p["model_provider"]).unwrap_or_default();
+                // A spawned sub-agent names the thread that started it; thread ids are the
+                // rollout uuids, i.e. our session ids. Review/compact sub-agents name none.
+                b.session.parent =
+                    text_at(&p["source"]["subagent"]["thread_spawn"]["parent_thread_id"]);
             }
             (Some("turn_context"), _) => {
                 if let Some(m) = text_at(&p["model"]) {
@@ -227,6 +231,33 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(s["title"], "Add rate limiting to the API");
+    }
+
+    #[test]
+    fn spawned_subagent_links_to_parent_and_its_cost_rolls_up() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/codex");
+        let child =
+            dir.join("rollout-2026-10-01T10-05-00-0199aaaa-bbbb-7ccc-8ddd-111111111111.jsonl");
+        let b = parse(&child, &std::fs::read(&child).unwrap());
+        assert_eq!(
+            b.session.parent.as_deref(),
+            Some("0199aaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee")
+        );
+
+        let mut st = crate::store::Store::in_memory().unwrap();
+        st.index_file(&dir.join(NAME), &parse).unwrap();
+        st.index_file(&child, &parse).unwrap();
+        let listed = st.sessions(10).unwrap();
+        assert_eq!(listed.len(), 1, "the sub-agent isn't listed on its own");
+        // Parent: 1000 input (800 cached) + 50 output; child: 300 input + 30 output.
+        assert_eq!(listed[0]["tokens"], 1380);
+    }
+
+    #[test]
+    fn review_subagent_has_no_parent() {
+        let line =
+            br#"{"type":"session_meta","payload":{"id":"x","source":{"subagent":"review"}}}"#;
+        assert_eq!(parse(Path::new("/a/x.jsonl"), line).session.parent, None);
     }
 
     #[test]

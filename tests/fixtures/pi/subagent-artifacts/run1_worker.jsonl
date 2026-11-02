@@ -1,0 +1,3 @@
+{"recordType":"message","runId":"run1","childIndex":0,"role":"user","timestamp":"2026-10-01T09:05:00.000Z","cwd":"/work/cli","content":[{"type":"text","text":"Find the config loader"}]}
+{"recordType":"tool_progress","runId":"run1","childIndex":0,"timestamp":"2026-10-01T09:05:01.000Z"}
+{"recordType":"message","runId":"run1","childIndex":0,"role":"assistant","timestamp":"2026-10-01T09:05:02.000Z","cwd":"/work/cli","provider":"anthropic","model":"claude-haiku-4-5","responseId":"resp-1","stopReason":"stop","usage":{"input":10,"output":5,"cacheRead":20,"cacheWrite":0,"cost":{"total":0.001}},"content":[{"type":"text","text":"It is in src/config.rs"}]}
