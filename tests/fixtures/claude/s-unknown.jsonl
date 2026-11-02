@@ -1,0 +1,4 @@
+{"type":"brand-new-record","sessionId":"s-unknown","whatever":{"nested":[1,2]}}
+this line is not json
+{"type":"user","uuid":"k1","sessionId":"s-unknown","timestamp":"2026-10-02T09:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"still parsed"}]}}
+{"type":"assistant","uuid":"k2","message":"unexpected shape"}
