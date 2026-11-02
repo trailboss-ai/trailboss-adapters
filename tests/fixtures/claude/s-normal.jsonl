@@ -7,3 +7,5 @@
 {"type":"assistant","uuid":"a3","sessionId":"s-normal","timestamp":"2026-10-01T10:00:09.000Z","cwd":"/work/app","message":{"id":"msg_syn","model":"<synthetic>","role":"assistant","content":[{"type":"text","text":"No response requested."}],"usage":{"input_tokens":0,"output_tokens":0}}}
 {"type":"ai-title","aiTitle":"Fix flaky login test","sessionId":"s-normal"}
 {"type":"system","subtype":"turn_duration","uuid":"td1","sessionId":"s-normal","timestamp":"2026-10-01T10:00:08.000Z","durationMs":8000}
+{"type":"file-history-delta","messageId":"u1","snapshotMessageId":"u1","timestamp":"2026-10-01T10:00:02.000Z","trackingPath":"/work/app/src/login.rs","backup":{"backupFileName":"abc123@v1","version":1,"backupTime":"2026-10-01T10:00:02.000Z"}}
+{"type":"file-history-snapshot","messageId":"u2","snapshot":{"messageId":"u2","trackedFileBackups":{"src/new.rs":{"backupFileName":null,"version":1,"backupTime":"2026-10-01T10:00:07.000Z","realParentDir":"/work/app/src"}},"timestamp":"2026-10-01T10:00:07.000Z"},"isSnapshotUpdate":false}
