@@ -53,6 +53,16 @@ pub struct FileEdit {
     pub tool: String,
 }
 
+/// A file's saved state from before an agent changed it (Claude Code's file history).
+/// `backup` is the backup file's name, or None when the file didn't exist yet.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Backup {
+    pub path: String,
+    pub version: i64,
+    pub backup: Option<String>,
+    pub ts: Option<String>,
+}
+
 /// How long one turn took: from the prompt to the agent's final reply.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Task {
@@ -78,6 +88,7 @@ pub struct Batch {
     pub messages: Vec<Message>,
     pub tasks: Vec<Task>,
     pub edits: Vec<FileEdit>,
+    pub backups: Vec<Backup>,
 }
 
 /// The files a Codex-style patch touches (`*** Add File:`, `*** Update File:`,
@@ -176,6 +187,13 @@ pub fn epoch(iso: &str) -> Option<i64> {
         .ok()?
         .query_row("SELECT unixepoch(?1)", [iso], |r| r.get(0))
         .ok()?
+}
+
+/// The local time now, as HH:MM:SS.
+pub fn local_time() -> String {
+    rusqlite::Connection::open_in_memory()
+        .and_then(|c| c.query_row("SELECT time('now', 'localtime')", [], |r| r.get(0)))
+        .unwrap_or_default()
 }
 
 /// Today's local date `days` days ago, as YYYY-MM-DD.
