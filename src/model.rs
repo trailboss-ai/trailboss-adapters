@@ -32,6 +32,8 @@ pub struct Usage {
     pub cache_write_1h: i64,
     /// The agent's own cost figure, used when trailboss has no price for the model.
     pub reported_cost: Option<f64>,
+    /// The git branch the response was made on, when the agent records it per message.
+    pub branch: Option<String>,
 }
 
 /// Searchable text of one user or assistant message.
@@ -92,4 +94,26 @@ pub fn widen(s: &mut Session, ts: &str) {
     if s.ended.as_deref().is_none_or(|x| ts > x) {
         s.ended = Some(ts.to_string());
     }
+}
+
+/// Seconds since the epoch for an ISO-8601 time with any offset. SQLite (already here for
+/// the index) does the calendar math.
+pub fn epoch(iso: &str) -> Option<i64> {
+    rusqlite::Connection::open_in_memory()
+        .ok()?
+        .query_row("SELECT unixepoch(?1)", [iso], |r| r.get(0))
+        .ok()?
+}
+
+/// Today's local date `days` days ago, as YYYY-MM-DD.
+pub fn date_days_ago(days: i64) -> String {
+    rusqlite::Connection::open_in_memory()
+        .and_then(|c| {
+            c.query_row(
+                "SELECT date('now', 'localtime', ?1)",
+                [format!("-{days} days")],
+                |r| r.get(0),
+            )
+        })
+        .unwrap_or_default()
 }
