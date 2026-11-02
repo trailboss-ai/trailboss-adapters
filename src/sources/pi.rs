@@ -140,6 +140,7 @@ fn usage(
         provider: text_at(provider).unwrap_or_default(),
         reasoning: n("reasoning"),
         cwd: None,
+        fast: false,
     })
 }
 

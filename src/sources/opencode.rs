@@ -183,6 +183,7 @@ pub fn read(conn: &Connection, since: i64) -> rusqlite::Result<(Vec<Batch>, i64)
                     .unwrap_or_default(),
                 reasoning: n(&t["reasoning"]),
                 cwd: text_at(&data["path"]["cwd"]),
+                fast: false,
             });
         }
         // A streaming reply's text is partial; index it once it's complete.

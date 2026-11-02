@@ -233,6 +233,7 @@ fn record(b: &mut Batch, r: &Value, is_sub: bool, seen: &mut HashSet<String>) {
                 provider: text_at(&m["provider"]).unwrap_or_else(|| "anthropic".into()),
                 reasoning: n(&u["output_tokens_details"]["thinking_tokens"]),
                 cwd: text_at(&r["cwd"]),
+                fast: u["speed"].as_str() == Some("fast"),
             });
         }
         _ => {}
@@ -355,5 +356,20 @@ mod tests {
             (b.usage[0].cache_write_5m, b.usage[0].cache_write_1h),
             (30, 0)
         );
+        assert!(!b.usage[0].fast, "no speed field: standard");
+    }
+
+    #[test]
+    fn fast_mode_responses_are_marked() {
+        let b = parse(
+            Path::new("/x/s-fast.jsonl"),
+            include_bytes!("../../tests/fixtures/claude/s-fast.jsonl"),
+        );
+        let fast: Vec<_> = b
+            .usage
+            .iter()
+            .map(|u| (u.message_id.as_str(), u.fast))
+            .collect();
+        assert_eq!(fast, [("msg_std", false), ("msg_fast", true)]);
     }
 }
