@@ -1,0 +1,4 @@
+{"timestamp":"2026-10-01T10:05:00.000Z","type":"session_meta","payload":{"id":"0199aaaa-bbbb-7ccc-8ddd-111111111111","cwd":"/work/api","model_provider":"openai","source":{"subagent":{"thread_spawn":{"parent_thread_id":"0199aaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee","depth":1}}},"thread_source":"subagent"}}
+{"timestamp":"2026-10-01T10:05:01.000Z","type":"turn_context","payload":{"turn_id":"t1","cwd":"/work/api","model":"gpt-5.5"}}
+{"timestamp":"2026-10-01T10:05:01.100Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Write tests for the limiter"}]}}
+{"timestamp":"2026-10-01T10:05:03.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":330},"last_token_usage":{"input_tokens":300,"cached_input_tokens":0,"output_tokens":30,"total_tokens":330}}}}

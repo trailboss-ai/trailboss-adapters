@@ -1,0 +1,2 @@
+{"type":"session","version":3,"id":"pi-2","cwd":"/work/cli","timestamp":"2026-10-01T09:10:00.000Z","parentSession":"/home/u/.pi/agent/sessions/--work-cli--/2026-10-01T09-00-00-000Z_pi-1.jsonl"}
+{"type":"message","id":"m1","timestamp":"2026-10-01T09:10:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Try another approach"}]}}
