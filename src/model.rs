@@ -1,4 +1,7 @@
-//! The normalized records every adapter emits and the store saves.
+//! The normalized records every adapter emits and the store saves, plus small helpers
+//! adapters share.
+
+use serde_json::Value;
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Session {
@@ -27,6 +30,8 @@ pub struct Usage {
     pub cache_read: i64,
     pub cache_write_5m: i64,
     pub cache_write_1h: i64,
+    /// The agent's own cost figure, used when trailboss has no price for the model.
+    pub reported_cost: Option<f64>,
 }
 
 /// Searchable text of one user or assistant message.
@@ -44,4 +49,47 @@ pub struct Batch {
     pub session: Session,
     pub usage: Vec<Usage>,
     pub messages: Vec<Message>,
+}
+
+/// A non-empty string, or None.
+pub fn text_at(v: &Value) -> Option<String> {
+    v.as_str().filter(|s| !s.is_empty()).map(String::from)
+}
+
+/// The human-readable text of a message: a plain string, or its text blocks (`text`,
+/// `input_text`, `output_text`). Thinking, tool calls and tool results are left out.
+pub fn text_of(content: &Value) -> String {
+    match content {
+        Value::String(s) => s.trim().to_string(),
+        Value::Array(blocks) => blocks
+            .iter()
+            .filter(|b| {
+                matches!(
+                    b["type"].as_str(),
+                    Some("text" | "input_text" | "output_text")
+                )
+            })
+            .filter_map(|b| b["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
+            .trim()
+            .to_string(),
+        _ => String::new(),
+    }
+}
+
+/// First 200 characters on one line, for session previews.
+pub fn preview(text: &str) -> String {
+    let one_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    one_line.chars().take(200).collect()
+}
+
+/// Earliest and latest timestamps seen. ISO-8601 UTC strings compare correctly as text.
+pub fn widen(s: &mut Session, ts: &str) {
+    if s.started.as_deref().is_none_or(|x| ts < x) {
+        s.started = Some(ts.to_string());
+    }
+    if s.ended.as_deref().is_none_or(|x| ts > x) {
+        s.ended = Some(ts.to_string());
+    }
 }
