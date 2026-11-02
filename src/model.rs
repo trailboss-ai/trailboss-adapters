@@ -38,6 +38,19 @@ pub struct Usage {
     pub provider: String,
     /// Reasoning tokens, already counted inside `output`.
     pub reasoning: i64,
+    /// The folder the response was made in, when the agent records it per message
+    /// (sessions can move between folders).
+    pub cwd: Option<String>,
+}
+
+/// An agent's tool call that changed a file (absolute path).
+#[derive(Debug, Clone, PartialEq)]
+pub struct FileEdit {
+    pub id: String,
+    pub ts: Option<String>,
+    pub path: String,
+    /// Edit, Write, apply_patch, ...
+    pub tool: String,
 }
 
 /// How long one turn took: from the prompt to the agent's final reply.
@@ -64,6 +77,36 @@ pub struct Batch {
     pub usage: Vec<Usage>,
     pub messages: Vec<Message>,
     pub tasks: Vec<Task>,
+    pub edits: Vec<FileEdit>,
+}
+
+/// The files a Codex-style patch touches (`*** Add File:`, `*** Update File:`,
+/// `*** Delete File:`, `*** Move to:`), made absolute against `cwd`.
+pub fn patch_paths(patch: &str, cwd: Option<&str>) -> Vec<String> {
+    patch
+        .lines()
+        .filter_map(|l| {
+            [
+                "*** Add File: ",
+                "*** Update File: ",
+                "*** Delete File: ",
+                "*** Move to: ",
+            ]
+            .iter()
+            .find_map(|p| l.strip_prefix(p))
+        })
+        .map(|p| absolute(p.trim(), cwd))
+        .collect()
+}
+
+/// `p` made absolute against `cwd` (unchanged if already absolute, or no cwd).
+pub fn absolute(p: &str, cwd: Option<&str>) -> String {
+    match cwd {
+        Some(c) if !p.starts_with('/') => {
+            format!("{}/{}", c.trim_end_matches('/'), p.trim_start_matches("./"))
+        }
+        _ => p.to_string(),
+    }
 }
 
 /// A non-empty string, or None.
@@ -156,6 +199,22 @@ pub fn iso_from_ms(ms: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn patches_name_their_files() {
+        let patch = "*** Begin Patch\n*** Update File: src/a.rs\n@@\n-x\n+y\n*** Add File: /abs/new.rs\n+z\n*** Delete File: ./old.rs\n*** Update File: b.rs\n*** Move to: c.rs\n*** End Patch";
+        assert_eq!(
+            patch_paths(patch, Some("/repo/")),
+            [
+                "/repo/src/a.rs",
+                "/abs/new.rs",
+                "/repo/old.rs",
+                "/repo/b.rs",
+                "/repo/c.rs"
+            ]
+        );
+        assert_eq!(absolute("x", None), "x");
+    }
 
     #[test]
     fn iso_dates() {
