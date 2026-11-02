@@ -1,4 +1,4 @@
-//! Agents trailboss lists sessions for but doesn't read usage from: it reads the first 8 KB
+//! Agents Trailboss lists sessions for but doesn't read usage from: it reads the first 8 KB
 //! of each session file for an id, a folder and a preview, like the session-history Herdr
 //! mod. The agent list and where each keeps its sessions come from that mod's catalog; the
 //! code is trailboss's own.
