@@ -99,6 +99,23 @@ pub fn patch_paths(patch: &str, cwd: Option<&str>) -> Vec<String> {
         .collect()
 }
 
+/// `p` with symlinks resolved, so the same file always has one name (git reports resolved
+/// paths; agents record what they were given, e.g. macOS's /var for /private/var). A path
+/// that no longer exists keeps its name under its resolved folder; failing that, as is.
+pub fn canonical(p: &str) -> String {
+    let path = std::path::Path::new(p);
+    if let Ok(c) = std::fs::canonicalize(path) {
+        return c.display().to_string();
+    }
+    match (
+        path.parent().and_then(|d| std::fs::canonicalize(d).ok()),
+        path.file_name(),
+    ) {
+        (Some(dir), Some(name)) => dir.join(name).display().to_string(),
+        _ => p.to_string(),
+    }
+}
+
 /// `p` made absolute against `cwd` (unchanged if already absolute, or no cwd).
 pub fn absolute(p: &str, cwd: Option<&str>) -> String {
     match cwd {
