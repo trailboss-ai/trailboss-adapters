@@ -3,7 +3,7 @@
 
 use crate::model::{
     Backup, Batch, FileEdit, Message, Session, Task, Usage, absolute, preview, text_at, text_of,
-    widen,
+    thinking_and_tools, widen,
 };
 use serde_json::Value;
 use std::collections::HashSet;
@@ -120,13 +120,30 @@ fn record(b: &mut Batch, r: &Value, is_sub: bool, seen: &mut HashSet<String>) {
                 });
             }
         }
+        // Claude Code's own running total, including calls it doesn't write here
+        // (compaction, titles). Highest wins: after a resume it can restart lower.
+        Some("cost-state") => {
+            if let Some(c) = r["totalCostUSD"].as_f64() {
+                s.reported_cost_usd = Some(s.reported_cost_usd.map_or(c, |x| x.max(c)));
+            }
+        }
         Some("ai-title") => {
             if let Some(t) = text_at(&r["aiTitle"]) {
                 s.title = Some(t);
             }
         }
         Some("user") if r["isMeta"] != true => {
-            let text = text_of(&r["message"]["content"]);
+            let content = &r["message"]["content"];
+            if let Some(uuid) = &uuid {
+                let tools = thinking_and_tools(content).1;
+                b.messages.extend(Message::extra(
+                    format!("{uuid}:tool"),
+                    ts.clone(),
+                    "tool",
+                    &tools,
+                ));
+            }
+            let text = text_of(content);
             if text.is_empty() {
                 return; // tool results
             }
@@ -167,6 +184,15 @@ fn record(b: &mut Batch, r: &Value, is_sub: bool, seen: &mut HashSet<String>) {
                     path: absolute(&path, b.session.cwd.as_deref()),
                     tool: tool.to_string(),
                 });
+            }
+            if let Some(uuid) = &uuid {
+                let thinking = thinking_and_tools(&m["content"]).0;
+                b.messages.extend(Message::extra(
+                    format!("{uuid}:thinking"),
+                    ts.clone(),
+                    "thinking",
+                    &thinking,
+                ));
             }
             let text = text_of(&m["content"]);
             if let (false, Some(uuid)) = (text.is_empty(), uuid) {
@@ -238,6 +264,8 @@ mod tests {
         assert_eq!(s.first_prompt.as_deref(), Some("Fix the flaky login test"));
         assert_eq!(s.started.as_deref(), Some("2026-10-01T10:00:00.000Z"));
         assert_eq!(s.ended.as_deref(), Some("2026-10-01T10:00:09.000Z"));
+        // The last total dips (a resume restarting lower); the highest is kept.
+        assert_eq!(s.reported_cost_usd, Some(0.1234));
 
         // One response split over two records, plus a synthetic one: counted once.
         assert_eq!(b.usage.len(), 1);
@@ -259,18 +287,55 @@ mod tests {
             ("td1", 8000)
         );
 
-        // The meta message, thinking-only record and tool result aren't searchable text.
+        // The meta message is skipped; thinking and tool output get their own roles.
         let roles: Vec<_> = b.messages.iter().map(|m| m.role).collect();
-        assert_eq!(roles, ["user", "assistant", "assistant"]);
-        assert!(b.messages[1].text.contains("session cookie"));
+        assert_eq!(
+            roles,
+            ["user", "thinking", "assistant", "tool", "assistant"]
+        );
+        assert_eq!(b.messages[1].text, "private reasoning");
+        assert_eq!(b.messages[1].uuid, "a1:thinking");
+        assert!(b.messages[2].text.contains("session cookie"));
+        assert_eq!(
+            (b.messages[3].uuid.as_str(), b.messages[3].text.as_str()),
+            ("u2:tool", "ok")
+        );
     }
 
     #[test]
     fn unknown_records_and_bad_lines_are_skipped() {
         let (p, bytes) = fixture("s-unknown.jsonl");
         let b = parse(&p, &bytes);
-        assert_eq!(b.messages.len(), 1);
+        let roles: Vec<_> = b.messages.iter().map(|m| m.role).collect();
+        assert_eq!(roles, ["user", "thinking"], "unknown content block skipped");
+        assert_eq!(b.messages[1].text, "unknown blocks skipped");
         assert_eq!(b.session.first_prompt.as_deref(), Some("still parsed"));
+        assert_eq!(b.session.reported_cost_usd, None, "malformed cost-state");
+    }
+
+    #[test]
+    fn truncated_cost_state_is_ignored() {
+        let (p, bytes) = fixture("s-normal.jsonl");
+        let text = std::str::from_utf8(&bytes).unwrap();
+        // Cut inside the 0.1234 record's number: that line isn't complete JSON.
+        let cut = text.find("\"totalCostUSD\":0.1234").unwrap() + 17;
+        let b = parse(&p, &bytes[..cut]);
+        assert_eq!(b.session.reported_cost_usd, Some(0.05));
+    }
+
+    #[test]
+    fn tool_output_is_capped_and_a_cut_line_is_skipped() {
+        let big = "é".repeat(5000); // multi-byte, so the cap must land on a char boundary
+        let line = format!(
+            r#"{{"type":"user","uuid":"u9","message":{{"role":"user","content":[{{"type":"tool_result","content":[{{"type":"text","text":"{big}"}}]}}]}}}}"#
+        );
+        let b = parse(Path::new("/x/s.jsonl"), line.as_bytes());
+        assert_eq!(b.messages.len(), 1);
+        assert_eq!(b.messages[0].role, "tool");
+        assert!(b.messages[0].text.len() <= crate::model::EXTRA_CAP);
+        assert!(b.messages[0].text.len() > crate::model::EXTRA_CAP - 2);
+        let b = parse(Path::new("/x/s.jsonl"), &line.as_bytes()[..line.len() / 2]);
+        assert!(b.messages.is_empty());
     }
 
     #[test]

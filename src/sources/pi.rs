@@ -5,7 +5,9 @@
 //! (`<folder>/subagent-artifacts/<run>_<agent>.jsonl`) have no header: each record is the
 //! message itself, marked `recordType: message`. They don't name their parent session.
 
-use crate::model::{Batch, Message, Session, Usage, preview, text_at, text_of, widen};
+use crate::model::{
+    Batch, Message, Session, Usage, preview, text_at, text_of, thinking_and_tools, widen,
+};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -67,8 +69,20 @@ pub fn parse(path: &Path, bytes: &[u8]) -> Batch {
                 let role = match m["role"].as_str() {
                     Some("user") => "user",
                     Some("assistant") => "assistant",
+                    Some("toolResult") => {
+                        let out = text_of(&m["content"]);
+                        b.messages.extend(Message::extra(key(), ts, "tool", &out));
+                        continue;
+                    }
                     _ => continue,
                 };
+                let thinking = thinking_and_tools(&m["content"]).0;
+                b.messages.extend(Message::extra(
+                    format!("{}:thinking", key()),
+                    ts.clone(),
+                    "thinking",
+                    &thinking,
+                ));
                 if role == "assistant"
                     && let Some(u) =
                         usage(key(), ts.clone(), &m["usage"], &m["model"], &m["provider"])
@@ -157,7 +171,12 @@ mod tests {
         assert_eq!(b.usage[1].message_id, "c1");
 
         let roles: Vec<_> = b.messages.iter().map(|m| m.role).collect();
-        assert_eq!(roles, ["user", "assistant"]);
+        assert_eq!(roles, ["user", "thinking", "assistant", "tool"]);
+        assert_eq!(b.messages[1].text, "Skim the headings first");
+        assert_eq!(
+            (b.messages[3].uuid.as_str(), b.messages[3].text.as_str()),
+            ("m3", "file contents")
+        );
     }
 
     fn fixture(name: &str) -> (PathBuf, Vec<u8>) {
