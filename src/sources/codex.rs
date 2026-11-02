@@ -195,6 +195,7 @@ pub fn parse(path: &Path, bytes: &[u8]) -> Batch {
                     provider: provider.clone(),
                     reasoning: n("reasoning_output_tokens"),
                     cwd: cwd.clone(),
+                    fast: false,
                 });
             }
             _ => {}

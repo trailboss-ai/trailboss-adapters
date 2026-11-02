@@ -151,6 +151,7 @@ pub fn parse(agent: &'static str, m: &Value, path: &Path, bytes: &[u8]) -> Batch
                 cwd: None,
                 reported_cost: None,
                 branch: None,
+                fast: false,
             });
         }
         if let Some(ms) = m

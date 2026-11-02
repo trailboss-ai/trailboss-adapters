@@ -44,6 +44,8 @@ pub struct Usage {
     /// The folder the response was made in, when the agent records it per message
     /// (sessions can move between folders).
     pub cwd: Option<String>,
+    /// Served in fast mode (Claude Code's `usage.speed: "fast"`), billed at a multiple.
+    pub fast: bool,
 }
 
 /// An agent's tool call that changed a file (absolute path).
