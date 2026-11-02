@@ -16,6 +16,9 @@ pub struct Session {
     pub first_prompt: Option<String>,
     pub started: Option<String>,
     pub ended: Option<String>,
+    /// The agent's own running total for the session (Claude Code's `cost-state`), the
+    /// highest one seen: resumed sessions sometimes restart the count lower.
+    pub reported_cost_usd: Option<f64>,
 }
 
 /// Token counts for one model response. `message_id` is unique per agent, so a response
@@ -71,13 +74,38 @@ pub struct Task {
     pub duration_ms: i64,
 }
 
-/// Searchable text of one user or assistant message.
+/// Searchable text of one message: `user` or `assistant`, or the `thinking` and `tool`
+/// output that only `search --all` looks at.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     pub uuid: String,
     pub ts: Option<String>,
     pub role: &'static str,
     pub text: String,
+}
+
+/// Thinking and tool output are indexed up to this many bytes each: the start says what
+/// they're about, and a whole file dumped by a tool would bloat the index.
+pub const EXTRA_CAP: usize = 1024;
+
+impl Message {
+    /// A `thinking` or `tool` entry, capped at `EXTRA_CAP`; None when there's no text.
+    pub fn extra(uuid: String, ts: Option<String>, role: &'static str, text: &str) -> Option<Self> {
+        let text = text.trim();
+        if text.is_empty() {
+            return None;
+        }
+        let mut end = text.len().min(EXTRA_CAP);
+        while !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        Some(Self {
+            uuid,
+            ts,
+            role,
+            text: text[..end].to_string(),
+        })
+    }
 }
 
 /// What parsing one chunk of one session file yields.
@@ -162,6 +190,20 @@ pub fn text_of(content: &Value) -> String {
             .to_string(),
         _ => String::new(),
     }
+}
+
+/// The thinking (`thinking` blocks) and tool output (`tool_result` blocks, a string or
+/// text blocks) in a message's content, as Claude Code and pi write them.
+pub fn thinking_and_tools(content: &Value) -> (String, String) {
+    let (mut thinking, mut tools) = (Vec::new(), Vec::new());
+    for b in content.as_array().into_iter().flatten() {
+        match b["type"].as_str() {
+            Some("thinking") => thinking.extend(b["thinking"].as_str()),
+            Some("tool_result") => tools.push(text_of(&b["content"])),
+            _ => {}
+        }
+    }
+    (thinking.join("\n"), tools.join("\n"))
 }
 
 /// First 200 characters on one line, for session previews.

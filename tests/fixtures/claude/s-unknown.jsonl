@@ -2,3 +2,5 @@
 this line is not json
 {"type":"user","uuid":"k1","sessionId":"s-unknown","timestamp":"2026-10-02T09:00:00.000Z","message":{"role":"user","content":[{"type":"text","text":"still parsed"}]}}
 {"type":"assistant","uuid":"k2","message":"unexpected shape"}
+{"type":"cost-state","sessionId":"s-unknown","totalCostUSD":"not a number"}
+{"type":"assistant","uuid":"k3","timestamp":"2026-10-02T09:00:01.000Z","message":{"role":"assistant","content":[{"type":"brand_new_block","x":1},{"type":"thinking","thinking":"unknown blocks skipped"}]}}

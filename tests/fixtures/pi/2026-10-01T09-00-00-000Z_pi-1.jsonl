@@ -1,6 +1,6 @@
 {"type":"session","id":"pi-1","cwd":"/work/cli","timestamp":"2026-10-01T09:00:00.000Z"}
 {"type":"message","id":"m1","timestamp":"2026-10-01T09:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Summarize the README"}]}}
-{"type":"message","id":"m2","timestamp":"2026-10-01T09:00:02.000Z","message":{"role":"assistant","provider":"anthropic","model":"claude-sonnet-4-6","content":[{"type":"text","text":"It describes a CLI."}],"usage":{"input":100,"output":20,"cacheRead":300,"cacheWrite":40,"cost":{"total":0.0123}},"stopReason":"stop"}}
+{"type":"message","id":"m2","timestamp":"2026-10-01T09:00:02.000Z","message":{"role":"assistant","provider":"anthropic","model":"claude-sonnet-4-6","content":[{"type":"thinking","thinking":"Skim the headings first"},{"type":"text","text":"It describes a CLI."}],"usage":{"input":100,"output":20,"cacheRead":300,"cacheWrite":40,"cost":{"total":0.0123}},"stopReason":"stop"}}
 {"type":"message","id":"m3","timestamp":"2026-10-01T09:00:03.000Z","message":{"role":"toolResult","toolCallId":"x","content":[{"type":"text","text":"file contents"}]}}
 {"type":"compaction","id":"c1","timestamp":"2026-10-01T09:00:04.000Z","model":"claude-sonnet-4-6","usage":{"input":500,"output":80,"cacheRead":0,"cacheWrite":0}}
 not json

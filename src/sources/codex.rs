@@ -105,6 +105,31 @@ pub fn parse(path: &Path, bytes: &[u8]) -> Batch {
                     });
                 }
             }
+            // Only reasoning summaries are readable; the full reasoning is encrypted.
+            (Some("response_item"), Some("reasoning")) => {
+                let text: Vec<_> = [&p["summary"], &p["content"]]
+                    .into_iter()
+                    .flat_map(|v| v.as_array().into_iter().flatten())
+                    .filter_map(|b| b["text"].as_str())
+                    .collect();
+                let uuid = text_at(&p["id"])
+                    .unwrap_or_else(|| format!("{id}:{}", ts.as_deref().unwrap_or_default()));
+                b.messages.extend(Message::extra(
+                    format!("{uuid}:thinking"),
+                    ts,
+                    "thinking",
+                    &text.join("\n"),
+                ));
+            }
+            (Some("response_item"), Some("function_call_output" | "custom_tool_call_output")) => {
+                let call = text_at(&p["call_id"]).unwrap_or_else(|| ts.clone().unwrap_or_default());
+                b.messages.extend(Message::extra(
+                    format!("{id}:{call}:tool"),
+                    ts,
+                    "tool",
+                    &text_of(&p["output"]),
+                ));
+            }
             (Some("response_item"), Some("message")) => {
                 let role = match p["role"].as_str() {
                     Some("user") => "user",
@@ -213,9 +238,26 @@ mod tests {
         assert_eq!((u.provider.as_str(), u.reasoning), ("openai", 10));
         assert_eq!(b.tasks[0].duration_ms, 4300);
 
-        // Developer instructions and injected context aren't indexed.
+        // Developer instructions and injected context aren't indexed; reasoning summaries
+        // and tool output are, under their own roles.
         let roles: Vec<_> = b.messages.iter().map(|m| m.role).collect();
-        assert_eq!(roles, ["user", "assistant"]);
+        assert_eq!(roles, ["user", "thinking", "tool", "assistant"]);
+        assert_eq!(b.messages[1].text, "Weighing a token bucket");
+        assert_eq!(b.messages[2].uuid, format!("{}:call_1:tool", s.id));
+        assert_eq!(b.messages[2].text, "limiter.rs: 3 matches");
+    }
+
+    #[test]
+    fn cut_reasoning_line_is_skipped() {
+        let (p, bytes) = fixture();
+        let text = std::str::from_utf8(&bytes).unwrap();
+        let cut = text.find("Weighing").unwrap();
+        let roles: Vec<_> = parse(&p, &bytes[..cut])
+            .messages
+            .iter()
+            .map(|m| m.role)
+            .collect();
+        assert_eq!(roles, ["user"]);
     }
 
     #[test]
