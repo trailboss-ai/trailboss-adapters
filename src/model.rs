@@ -30,7 +30,7 @@ pub struct Usage {
     pub cache_read: i64,
     pub cache_write_5m: i64,
     pub cache_write_1h: i64,
-    /// The agent's own cost figure, used when trailboss has no price for the model.
+    /// The agent's own cost figure, used when Trailboss has no price for the model.
     pub reported_cost: Option<f64>,
     /// The git branch the response was made on, when the agent records it per message.
     pub branch: Option<String>,
