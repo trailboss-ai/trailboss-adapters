@@ -3,9 +3,7 @@
 //! `part`. The database also holds account credentials, so it's opened read-only and only
 //! the session and message tables are ever queried.
 
-use crate::error::{Error, Result};
 use crate::model::{Batch, Message, Session, Usage, preview, text_at, text_of};
-use crate::store::Store;
 use rusqlite::{Connection, OpenFlags, OptionalExtension};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -24,27 +22,15 @@ pub fn databases() -> Vec<PathBuf> {
         .collect()
 }
 
-/// Index what changed since the last run. Messages are rewritten while they stream, so the
-/// bookmark is the newest `time_updated` seen, not a file offset.
-pub fn index(st: &mut Store, db: &Path) -> Result<bool> {
-    let key = format!("opencode:{}", db.display());
-    let since = st.offset(&key)?;
-    let src = |source| Error::Source {
-        path: db.to_path_buf(),
-        source,
-    };
+/// Opens `db` read-only (it holds account credentials too), waiting briefly while opencode
+/// writes to it.
+pub fn open(db: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open_with_flags(
         db,
         OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-    )
-    .map_err(src)?;
-    conn.busy_timeout(Duration::from_secs(2)).map_err(src)?;
-    let (batches, newest) = read(&conn, since).map_err(src)?;
-    if newest <= since {
-        return Ok(false);
-    }
-    st.save(&key, &batches, newest)?;
-    Ok(true)
+    )?;
+    conn.busy_timeout(Duration::from_secs(2))?;
+    Ok(conn)
 }
 
 /// Sessions with messages updated at or after `since` (ms since the epoch), and the newest
