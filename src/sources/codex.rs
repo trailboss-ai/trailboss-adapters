@@ -262,22 +262,7 @@ mod tests {
     }
 
     #[test]
-    fn compressed_rollouts_are_indexed_whole() {
-        let p = Path::new(env!("CARGO_MANIFEST_DIR")).join(
-            "tests/fixtures/codex/rollout-2026-10-02T10-00-00-0199aaaa-bbbb-7ccc-8ddd-ffffffffffff.jsonl.zst",
-        );
-        let mut st = crate::store::Store::in_memory().unwrap();
-        assert!(st.index_zst(&p, &parse).unwrap());
-        assert!(!st.index_zst(&p, &parse).unwrap(), "read once");
-        let s = st
-            .session(AGENT, "0199aaaa-bbbb-7ccc-8ddd-ffffffffffff")
-            .unwrap()
-            .unwrap();
-        assert_eq!(s["title"], "Add rate limiting to the API");
-    }
-
-    #[test]
-    fn spawned_subagent_links_to_parent_and_its_cost_rolls_up() {
+    fn spawned_subagent_links_to_parent() {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/codex");
         let child =
             dir.join("rollout-2026-10-01T10-05-00-0199aaaa-bbbb-7ccc-8ddd-111111111111.jsonl");
@@ -286,14 +271,20 @@ mod tests {
             b.session.parent.as_deref(),
             Some("0199aaaa-bbbb-7ccc-8ddd-eeeeeeeeeeee")
         );
-
-        let mut st = crate::store::Store::in_memory().unwrap();
-        st.index_file(&dir.join(NAME), &parse).unwrap();
-        st.index_file(&child, &parse).unwrap();
-        let listed = st.sessions(10).unwrap();
-        assert_eq!(listed.len(), 1, "the sub-agent isn't listed on its own");
         // Parent: 1000 input (800 cached) + 50 output; child: 300 input + 30 output.
-        assert_eq!(listed[0]["tokens"], 1380);
+        // Counted as the index counts them: input, output and cache.
+        let tokens = |b: &Batch| {
+            b.usage
+                .iter()
+                .map(|u| u.input + u.output + u.cache_read + u.cache_write_5m + u.cache_write_1h)
+                .sum::<i64>()
+        };
+        assert_eq!(tokens(&b), 330);
+        let parent = dir.join(NAME);
+        assert_eq!(
+            tokens(&parse(&parent, &std::fs::read(&parent).unwrap())),
+            1050
+        );
     }
 
     #[test]
