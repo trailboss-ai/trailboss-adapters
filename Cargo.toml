@@ -5,7 +5,8 @@ edition = "2024"
 rust-version = "1.89"
 description = "Trailboss's adapters: reading coding agents' session transcripts, and listing, reading and typing into terminal apps"
 license = "MIT"
-# Used by the trailboss binary from this workspace; not published on its own yet.
+repository = "https://github.com/trailboss-ai/trailboss-adapters"
+# Used by the trailboss CLI as a git dependency; not on crates.io (yet).
 publish = false
 
 [dependencies]
