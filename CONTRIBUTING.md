@@ -15,12 +15,12 @@ Run `cargo fmt --all`, `cargo clippy --all-targets -- -D warnings` and `cargo te
 
 ## License and contributor terms
 
-Trailboss is released under the [MIT License](LICENSE). By submitting a contribution (code, documentation, fixtures or anything else) through a pull request, patch or other means, you agree to the following:
+This repository is released under the [MIT License](LICENSE). By submitting a contribution (code, documentation, fixtures or anything else) through a pull request, patch or other means, you agree to the following:
 
 1. **You keep your copyright.** Your contribution is licensed to everyone under the MIT License, the same as the rest of the project.
 2. **You also grant the maintainer the right to relicense it.** You grant Manas Talukdar, and anyone he transfers the project to, a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to use, copy, modify, distribute and sublicense your contribution, and to release it under other license terms, including commercial or proprietary ones, alongside or instead of the MIT License. Versions already released under MIT stay available under MIT.
 3. **You have the right to contribute it.** The contribution is your own work, or you have permission to submit it under these terms, and it isn't subject to an employer's or anyone else's claim that would conflict with them. If your employer has rights to your work, you have their permission.
-4. **Third-party code is marked.** Anything you didn't write yourself is called out in the pull request, with its source and license, and added to [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). It must be under a license compatible with these terms (MIT, Apache-2.0, BSD or similar).
+4. **Third-party code is marked.** Anything you didn't write yourself is called out in the pull request, with its source and license, and noted in the README. It must be under a license compatible with these terms (MIT, Apache-2.0, BSD or similar).
 
 Sign off each commit to confirm this (`git commit -s`, which adds `Signed-off-by: Your Name <you@example.com>`). Pull requests whose commits aren't signed off can't be merged.
 
