@@ -1,5 +1,5 @@
 //! Hosts: terminal apps whose terminals Trailboss can see, type into and read, behind the
-//! four verbs of [`Host`]. Herdr's terminals survive a reboot (they come back as bare
+//! verbs of [`Host`]. Herdr's terminals survive a reboot (they come back as bare
 //! shells); tmux's do with tmux-resurrect; tuios keeps its sessions across restarts.
 
 pub mod herdr;
@@ -42,6 +42,11 @@ pub trait Host {
     fn send(&self, address: &str, text: &str) -> Result<(), String>;
     /// The terminal's screen, as text.
     fn read(&self, address: &str) -> Option<String>;
+    /// Press Enter alone, for a message whose Enter the program swallowed (it was still
+    /// reading a pasted image path). A host that can't says why.
+    fn enter(&self, _address: &str) -> Result<(), String> {
+        Err(format!("{} can't press Enter on its own", self.name()))
+    }
 }
 
 pub fn all() -> Vec<Box<dyn Host>> {

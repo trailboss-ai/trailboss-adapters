@@ -73,4 +73,8 @@ impl Host for Herdr {
     fn read(&self, address: &str) -> Option<String> {
         hc(&["read", address]).ok()
     }
+
+    fn enter(&self, address: &str) -> Result<(), String> {
+        hc(&["keys", address, "enter"]).map(|_| ())
+    }
 }

@@ -79,6 +79,10 @@ impl Host for Tmux {
     fn read(&self, address: &str) -> Option<String> {
         tmux(&["capture-pane", "-p", "-t", address]).ok()
     }
+
+    fn enter(&self, address: &str) -> Result<(), String> {
+        tmux(&["send-keys", "-t", address, "Enter"]).map(|_| ())
+    }
 }
 
 #[cfg(test)]

@@ -205,6 +205,14 @@ impl Host for Tuios {
             .ok()?;
         r["read"]["text"].as_str().map(String::from)
     }
+
+    fn enter(&self, address: &str) -> Result<(), String> {
+        self.call(
+            "pane.send_input",
+            json!({ "pane_id": address, "text": "", "keys": ["Enter"] }),
+        )
+        .map(|_| ())
+    }
 }
 
 #[cfg(test)]
@@ -326,6 +334,17 @@ mod tests {
         assert_eq!(
             req["params"],
             json!({ "pane_id": "w1:p1", "text": "claude --resume 's 1'\nsecond line", "keys": ["Enter"] })
+        );
+    }
+
+    #[test]
+    fn presses_enter_alone() {
+        let (f, host) = tuios(|_, _| json!({ "result": { "type": "ok" } }));
+        host.enter("w1:p1").unwrap();
+        let req = f.seen.recv().unwrap();
+        assert_eq!(
+            req["params"],
+            json!({ "pane_id": "w1:p1", "text": "", "keys": ["Enter"] })
         );
     }
 
