@@ -1,0 +1,4 @@
+{"type":"session.start","data":{"sessionId":"3c1d2e4f-3333-4eee-8fff-000000000003","version":1,"producer":"copilot-agent","copilotVersion":"0.0.330","startTime":"2025-09-01T08:00:00.000Z","context":{"cwd":"/work/docs"}},"id":"f-start","timestamp":"2025-09-01T08:00:00.000Z","parentId":null}
+{"type":"user.message","data":{"content":"Explain the build"},"id":"f-u1","timestamp":"2025-09-01T08:00:01.000Z","parentId":"f-start"}
+{"type":"assistant.message","data":{"messageId":"m1","content":"It runs make."},"id":"f-a1","timestamp":"2025-09-01T08:00:04.000Z","parentId":"f-u1"}
+{"type":"session.shutdown","data":{"shutdownType":"routine","sessionStartTime":1756713600000,"totalApiDurationMs":3000,"codeChanges":{"linesAdded":0,"linesRemoved":0,"filesModified":[]},"modelMetrics":{"gpt-4.1":{"requests":{"count":1},"usage":{"inputTokens":400,"outputTokens":50,"cacheReadTokens":0,"cacheWriteTokens":0}}}},"id":"f-sd","timestamp":"2025-09-01T08:00:05.000Z","parentId":"f-a1"}

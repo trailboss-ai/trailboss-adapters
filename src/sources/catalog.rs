@@ -68,11 +68,6 @@ pub const AGENTS: &[Agent] = &[
     agent!("codebuddy", &[".codebuddy/projects"], &["codebuddy"]),
     agent!("kimi", &[".kimi/sessions"], &["kimi"]),
     agent!("kiro", &[".kiro/sessions"], &["kiro"]),
-    agent!(
-        "copilot",
-        &[".copilot/sessions", ".copilot/cli/sessions"],
-        &["copilot"]
-    ),
     agent!("grok", &[".grok/sessions"], &["grok"]),
     agent!("omp", &[".omp/sessions"], &["omp"]),
     agent!("devin", &[".devin/sessions"], &["devin"]),

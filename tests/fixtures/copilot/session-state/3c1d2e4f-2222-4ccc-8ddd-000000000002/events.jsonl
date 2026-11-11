@@ -1,0 +1,9 @@
+{"type":"session.start","data":{"sessionId":"3c1d2e4f-2222-4ccc-8ddd-000000000002","version":1,"producer":"copilot-agent","copilotVersion":"1.0.109","startTime":"2026-10-02T10:00:00.000Z","detachedFromSpawningParentSessionId":"3c1d2e4f-1111-4aaa-8bbb-000000000001","context":{"cwd":"/work/api"}},"id":"o-start","timestamp":"2026-10-02T10:00:00.000Z","parentId":null}
+{"type":"session.journal_link","data":{"previousFile":"events.1.jsonl","sessionId":"3c1d2e4f-2222-4ccc-8ddd-000000000002","version":1},"id":"o-link","timestamp":"2026-10-02T10:00:00.100Z","parentId":"o-start"}
+{"type":"user.message","checkpoint":true,"data":{"content":"An older prompt, replayed"},"id":"o-old","timestamp":"2026-10-02T09:00:00.000Z","parentId":"o-link"}
+{"type":"user.message","data":{"content":"List the endpoints"},"id":"o-u1","timestamp":"2026-10-02T10:00:01.000Z","parentId":"o-old"}
+{"type":"future.hologram","data":{"beam":"on"},"id":"o-x","timestamp":"2026-10-02T10:00:02.000Z","parentId":"o-u1"}
+not json {
+{"hello":1}
+{"type":"assistant.message","ephemeral":true,"data":{"messageId":"m0","content":"partial"},"id":"o-eph","timestamp":"2026-10-02T10:00:03.000Z","parentId":"o-x"}
+{"type":"assistant.message","data":{"messageId":"m1","content":"Three endpoints."},"id":"o-a1","timestamp":"2026-10-02T10:00:04.000Z","parentId":"o-x"}
