@@ -1,0 +1,9 @@
+{"sessionId":"5a5a5a5a-2222-4ccc-8ddd-000000000002","projectHash":"shop","startTime":"2026-10-02T10:00:00.000Z","lastUpdated":"2026-10-02T10:00:00.000Z"}
+{"type":"brand_new_record","whatever":{"nested":[1,2]}}
+this line is not json
+{"id":"i1","timestamp":"2026-10-02T10:00:01.000Z","type":"info","content":"Switched model"}
+{"id":"u1b","timestamp":"2026-10-02T10:00:02.000Z","type":"user","content":"still parsed"}
+{"id":"x1","timestamp":"2026-10-02T10:00:03.000Z","type":"brand_new_type","content":"skipped"}
+{"$patch":{"id":"u1b","content":"edited"}}
+{"id":"g2","timestamp":"2026-10-02T10:00:04.000Z","type":"gemini","content":[{"text":"hidden","thought":true},{"text":"Done"}],"tokens":{"input":100,"output":10,"cached":0,"total":110},"model":"gemini-3-flash-preview"}
+{"$rewindTo":"g2"}

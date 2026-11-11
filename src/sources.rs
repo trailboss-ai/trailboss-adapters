@@ -6,5 +6,6 @@ pub mod catalog;
 pub mod claude;
 pub mod codex;
 pub mod custom;
+pub mod gemini;
 pub mod opencode;
 pub mod pi;

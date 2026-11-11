@@ -41,14 +41,6 @@ macro_rules! agent {
 
 pub const AGENTS: &[Agent] = &[
     agent!(
-        "gemini",
-        &[".gemini/tmp"],
-        &["sessionId", "id"],
-        &[],
-        TITLE,
-        &["gemini"]
-    ),
-    agent!(
         "cursor",
         &[".cursor/chats"],
         ID,
@@ -200,12 +192,12 @@ mod tests {
 
     #[test]
     fn whole_document_and_fallback_id() {
-        let gemini = find("gemini").unwrap();
+        let hermes = find("hermes").unwrap();
         let head = b"{\n  \"title\": \"Fix CI\",\n  \"messages\": []\n}";
-        let b = parse(gemini, Path::new("/h/.gemini/tmp/abc/chat-7.json"), head);
+        let b = parse(hermes, Path::new("/h/.hermes/sessions/chat-7.json"), head);
         assert_eq!(b.session.id, "chat-7", "no id field: the file name");
         assert_eq!(b.session.first_prompt.as_deref(), Some("Fix CI"));
-        assert_eq!(resume_argv(gemini, "chat-7"), ["gemini"]);
+        assert_eq!(resume_argv(hermes, "chat-7"), ["hermes"]);
     }
 
     #[test]

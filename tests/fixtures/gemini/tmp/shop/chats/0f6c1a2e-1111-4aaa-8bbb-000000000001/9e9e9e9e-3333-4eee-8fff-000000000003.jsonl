@@ -1,0 +1,3 @@
+{"sessionId":"9e9e9e9e-3333-4eee-8fff-000000000003","projectHash":"shop","startTime":"2026-10-01T09:00:06.000Z","lastUpdated":"2026-10-01T09:00:06.000Z","kind":"subagent","directories":["/work/shop"]}
+{"id":"su1","timestamp":"2026-10-01T09:00:06.000Z","type":"user","content":[{"text":"Find the cart component"}]}
+{"id":"sg1","timestamp":"2026-10-01T09:00:07.000Z","type":"gemini","content":"src/cart.tsx","tokens":{"input":300,"output":20,"cached":0,"total":320},"model":"gemini-2.5-flash"}
