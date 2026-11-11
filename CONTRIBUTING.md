@@ -8,7 +8,7 @@ Report problems and propose new agents or terminal apps in [trailboss-ai/trailbo
 - **Transcripts are private.** Never log their content or put it in an error message, and never commit real ones. Tests use small synthetic fixtures in `tests/fixtures/`.
 - **Every adapter has fixture tests** for a normal transcript, a truncated or partly written one, and an unknown record type, which must be skipped without failing.
 - **Typing into terminals** (`Host::send`) passes text as one argument, never through a shell string.
-- **No network code** in this crate.
+- **No network code** in this crate. A host's own Unix socket on this machine (tuios's) is not network code: nothing leaves the machine.
 - Stable Rust, edition 2024; no `unwrap()`/`expect()` outside tests unless a comment says why it can't fail; comments say why, not what.
 
 Run `cargo fmt --all`, `cargo clippy --all-targets -- -D warnings` and `cargo test` before opening a pull request.

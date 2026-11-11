@@ -1,13 +1,14 @@
 //! Hosts: terminal apps whose terminals Trailboss can see, type into and read, behind the
 //! four verbs of [`Host`]. Herdr's terminals survive a reboot (they come back as bare
-//! shells); tmux's do with tmux-resurrect.
+//! shells); tmux's do with tmux-resurrect; tuios keeps its sessions across restarts.
 
 pub mod herdr;
 pub mod tmux;
+pub mod tuios;
 
 /// A terminal as a host lists it.
 pub struct Listed {
-    /// Stable across a restore: Herdr's `t5`, tmux's `work:2.1`.
+    /// Stable across a restore: Herdr's `t5`, tmux's `work:2.1`, tuios's `w1a2b3c4d5e6:p0f1e2d3c4b5a`.
     pub address: String,
     /// Where it is, for people: the space / tab, or the tmux window.
     pub location: Option<String>,
@@ -32,7 +33,7 @@ pub struct Detail {
 }
 
 pub trait Host {
-    /// The key prefix in tracked.json and events: `herdr`, `tmux`.
+    /// The key prefix in tracked.json and events: `herdr`, `tmux`, `tuios`.
     fn name(&self) -> &'static str;
     /// Every live terminal; None when the host isn't running.
     fn list(&self) -> Option<Vec<Listed>>;
@@ -44,5 +45,9 @@ pub trait Host {
 }
 
 pub fn all() -> Vec<Box<dyn Host>> {
-    vec![Box::new(herdr::Herdr), Box::new(tmux::Tmux)]
+    vec![
+        Box::new(herdr::Herdr),
+        Box::new(tmux::Tmux),
+        Box::new(tuios::Tuios::new()),
+    ]
 }
