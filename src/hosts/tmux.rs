@@ -6,6 +6,7 @@
 
 use super::{Detail, Host, Listed};
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 pub struct Tmux;
@@ -23,6 +24,41 @@ fn tmux(args: &[&str]) -> Result<String, String> {
 }
 
 const FORMAT: &str = "#{session_name}:#{window_index}.#{pane_index}\t#{window_name}\t#{pane_current_command}\t#{pane_dead}";
+
+const ADDRESS: &str = "#{session_name}:#{window_index}.#{pane_index}";
+
+/// `new-window`'s arguments for [`Host::start`]: a window in the parent pane's session (else
+/// tmux's current one), left in the background. Several arguments after `--` are run
+/// directly, without a shell.
+fn new_window_args<'a>(
+    cwd: &'a str,
+    argv: &'a [String],
+    name: &'a str,
+    session: Option<&'a str>,
+) -> Vec<&'a str> {
+    let mut a = vec![
+        "new-window",
+        "-d",
+        "-P",
+        "-F",
+        ADDRESS,
+        "-c",
+        cwd,
+        "-n",
+        name,
+    ];
+    if let Some(s) = session {
+        a.extend(["-t", s]);
+    }
+    a.push("--");
+    a.extend(argv.iter().map(String::as_str));
+    a
+}
+
+/// `work:` from a pane address `work:2.1`: its session, as a target for a new window.
+fn session_of(pane: &str) -> Option<String> {
+    pane.rsplit_once(':').map(|(s, _)| format!("{s}:"))
+}
 
 /// One `list-panes` line; dead panes (their program exited, kept open) are skipped.
 fn parse_pane(line: &str) -> Option<Listed> {
@@ -83,6 +119,23 @@ impl Host for Tmux {
     fn enter(&self, address: &str) -> Result<(), String> {
         tmux(&["send-keys", "-t", address, "Enter"]).map(|_| ())
     }
+
+    fn start(
+        &self,
+        cwd: &Path,
+        argv: &[String],
+        name: &str,
+        parent: Option<&str>,
+    ) -> Result<String, String> {
+        let cwd = cwd.to_str().ok_or("the folder's name isn't UTF-8")?;
+        let session = parent.and_then(session_of);
+        let out = tmux(&new_window_args(cwd, argv, name, session.as_deref()))?;
+        let address = out.trim();
+        if address.is_empty() {
+            return Err("tmux didn't say which pane it started".into());
+        }
+        Ok(address.to_string())
+    }
 }
 
 #[cfg(test)]
@@ -102,6 +155,13 @@ mod tests {
         );
         assert!(parse_pane("work:3.0\tlogs\tbash\t1").is_none(), "dead pane");
         assert!(parse_pane("garbage").is_none());
+
+        let argv = vec!["codex".to_string(), "do it".to_string()];
+        let s = session_of("work:2.1");
+        assert_eq!(s.as_deref(), Some("work:"));
+        let a = new_window_args("/w", &argv, "task-1", s.as_deref());
+        assert_eq!(a[a.len() - 5..], ["-t", "work:", "--", "codex", "do it"]);
+        assert!(!new_window_args("/w", &argv, "task-1", None).contains(&"-t"));
 
         // pid (comm) state ppid pgrp session tty_nr tpgid ...
         let stat = "4242 (zsh) S 4200 4242 4242 34817 5151 4194560 0 0";

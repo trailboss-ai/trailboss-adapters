@@ -2,6 +2,8 @@
 //! verbs of [`Host`]. Herdr's terminals survive a reboot (they come back as bare
 //! shells); tmux's do with tmux-resurrect; tuios keeps its sessions across restarts.
 
+use std::path::Path;
+
 pub mod herdr;
 pub mod tmux;
 pub mod tuios;
@@ -46,6 +48,18 @@ pub trait Host {
     /// reading a pasted image path). A host that can't says why.
     fn enter(&self, _address: &str) -> Result<(), String> {
         Err(format!("{} can't press Enter on its own", self.name()))
+    }
+    /// Start `argv` (run directly, never through a shell) in a new terminal in `cwd`, named
+    /// `name`, beside or under the terminal `parent` where the host has such a thing; returns
+    /// the new terminal's address. A host that can't start terminals says so.
+    fn start(
+        &self,
+        _cwd: &Path,
+        _argv: &[String],
+        _name: &str,
+        _parent: Option<&str>,
+    ) -> Result<String, String> {
+        Err(format!("{} can't start a terminal", self.name()))
     }
 }
 
