@@ -1,0 +1,7 @@
+{"type":"session","version":3,"id":"pt-root","cwd":"/work/pitree","timestamp":"2026-10-03T09:00:00.000Z"}
+{"type":"message","id":"a1000001","parentId":null,"timestamp":"2026-10-03T09:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Sketch the parser"}]}}
+{"type":"message","id":"a1000002","parentId":"a1000001","timestamp":"2026-10-03T09:00:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Here is a sketch."}]}}
+{"type":"message","id":"a1000003","parentId":"a1000002","timestamp":"2026-10-03T09:10:00.000Z","message":{"role":"user","content":[{"type":"text","text":"Add error handling"}]}}
+{"type":"message","id":"a1000004","parentId":"a1000003","timestamp":"2026-10-03T09:10:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Errors are handled."}]}}
+{"type":"message","id":"a1000005","parentId":"a1000004","timestamp":"2026-10-03T09:30:00.000Z","message":{"role":"user","content":[{"type":"text","text":"Write the tests"}]}}
+{"type":"message","id":"a1000006","parentId":"a1000005","timestamp":"2026-10-03T09:30:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Tests added."}]}}

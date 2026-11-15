@@ -1,6 +1,9 @@
 //! pi. Sessions are `~/.pi/agent/sessions/<folder>/<time>_<id>.jsonl`: a `session` header
 //! (id, cwd), then `message` records. Compaction and branch summaries also carry usage.
-//! A forked or spawned session's header names its parent's file (`parentSession`).
+//! A forked, cloned or spawned session's header names its parent's file (`parentSession`).
+//! `/fork` and `/clone` also copy the parent's entries up to that point into the new file,
+//! ids and times kept; a session started with a parent and nothing copied (an extension's
+//! `newSession`) starts with its own first entry.
 //! Sub-agent transcripts from the pi-subagents extension
 //! (`<folder>/subagent-artifacts/<run>_<agent>.jsonl`) have no header: each record is the
 //! message itself, marked `recordType: message`. They don't name their parent session.
@@ -195,6 +198,31 @@ mod tests {
         assert_eq!(
             b.session.parent.as_deref(),
             Some("2026-10-01T09-00-00-000Z_pi-1")
+        );
+    }
+
+    #[test]
+    fn fork_and_clone_keep_the_ids_of_what_they_copied() {
+        let ids = |name: &str| {
+            let (p, bytes) = fixture(name);
+            let b = parse(&p, &bytes);
+            assert_eq!(
+                b.session.parent.as_deref(),
+                Some("2026-10-03T09-00-00-000Z_pt-root")
+            );
+            b.messages.into_iter().map(|m| m.uuid).collect::<Vec<_>>()
+        };
+        assert_eq!(
+            ids("2026-10-03T09-20-00-000Z_pt-fork.jsonl")[..2],
+            ["a1000001", "a1000002"]
+        );
+        assert_eq!(
+            ids("2026-10-03T09-15-00-000Z_pt-clone.jsonl")[..4],
+            ["a1000001", "a1000002", "a1000003", "a1000004"]
+        );
+        assert_eq!(
+            ids("2026-10-03T09-31-00-000Z_pt-spawn.jsonl"),
+            ["d4000001", "d4000002"]
         );
     }
 

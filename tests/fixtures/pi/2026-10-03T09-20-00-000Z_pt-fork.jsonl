@@ -1,0 +1,5 @@
+{"type":"session","version":3,"id":"pt-fork","cwd":"/work/pitree","timestamp":"2026-10-03T09:20:00.000Z","parentSession":"/home/u/.pi/agent/sessions/--work-pitree--/2026-10-03T09-00-00-000Z_pt-root.jsonl"}
+{"type":"message","id":"a1000001","parentId":null,"timestamp":"2026-10-03T09:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Sketch the parser"}]}}
+{"type":"message","id":"a1000002","parentId":"a1000001","timestamp":"2026-10-03T09:00:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Here is a sketch."}]}}
+{"type":"message","id":"b2000001","parentId":"a1000002","timestamp":"2026-10-03T09:20:10.000Z","message":{"role":"user","content":[{"type":"text","text":"Use a hand-written lexer instead"}]}}
+{"type":"message","id":"b2000002","parentId":"b2000001","timestamp":"2026-10-03T09:20:15.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Switched to a hand-written lexer."}]}}

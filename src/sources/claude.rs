@@ -50,12 +50,91 @@ pub fn parse(path: &Path, bytes: &[u8]) -> Batch {
     };
     // Claude Code writes one record per content block, each repeating the response's usage.
     let mut seen = HashSet::new();
+    let mut side = Sidechains::default();
     for line in bytes.split(|&c| c == b'\n') {
         if let Ok(r) = serde_json::from_slice::<Value>(line) {
             record(&mut b, &r, is_sub, &mut seen);
+            if !is_sub && r["isSidechain"] == true {
+                side.add(&b.session, &r);
+            }
         }
     }
+    b.sidechains = side.done();
     b
+}
+
+/// Older Claude Code versions wrote each sub-agent's records into the main transcript,
+/// marked `isSidechain`. Each sub-agent becomes a session of its own, `sidechain-<uuid>`
+/// after the record that opened it (its prompt), holding its messages; its records follow
+/// one another by `parentUuid`, so sub-agents running at once stay apart.
+#[derive(Default)]
+struct Sidechains {
+    chains: Vec<(Batch, HashSet<String>)>,
+    /// Record uuid → its chain.
+    of: std::collections::HashMap<String, usize>,
+    last: Option<usize>,
+}
+
+impl Sidechains {
+    fn add(&mut self, main: &Session, r: &Value) {
+        let parent = text_at(&r["parentUuid"]);
+        let prompt = r["type"] == "user"
+            && r["isMeta"] != true
+            && !text_of(&r["message"]["content"]).is_empty();
+        let i = match parent.as_deref().and_then(|p| self.of.get(p)) {
+            Some(&i) => i,
+            None if prompt => {
+                let root = text_at(&r["uuid"]).unwrap_or_else(|| {
+                    format!(
+                        "{}:{}",
+                        main.id,
+                        r["timestamp"].as_str().unwrap_or_default()
+                    )
+                });
+                self.chains.push((
+                    Batch {
+                        session: Session {
+                            agent: AGENT,
+                            id: format!("sidechain-{root}"),
+                            parent: Some(main.id.clone()),
+                            path: main.path.clone(),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                    HashSet::new(),
+                ));
+                self.chains.len() - 1
+            }
+            // Records without a known parent go with the latest sub-agent; before any, a
+            // sub-agent that started in an earlier part of the file can't be told.
+            None => match self.last {
+                Some(i) => i,
+                None => return,
+            },
+        };
+        if let Some(u) = text_at(&r["uuid"]) {
+            self.of.insert(u, i);
+        }
+        self.last = Some(i);
+        let (b, seen) = &mut self.chains[i];
+        record(b, r, true, seen);
+    }
+
+    fn done(self) -> Vec<Batch> {
+        self.chains
+            .into_iter()
+            .map(|(mut b, _)| {
+                // Already counted in the main session.
+                b.usage.clear();
+                b.edits.clear();
+                b.tasks.clear();
+                b.backups.clear();
+                b.session.reported_cost_usd = None;
+                b
+            })
+            .collect()
+    }
 }
 
 /// One file-history entry. Relative paths come with the file's resolved folder.
@@ -361,6 +440,70 @@ mod tests {
         // In a sub-agent's own file, every record is its own.
         let sub = Path::new("/x/proj/s-sidechain/subagents/agent-s1.jsonl");
         assert_eq!(parse(sub, &bytes).messages.len(), 9);
+    }
+
+    #[test]
+    fn each_side_chain_in_the_main_file_is_a_sub_agent_of_its_own() {
+        // Two sub-agents running at once, their records interleaved.
+        let (p, bytes) = fixture("s-sidechains.jsonl");
+        let b = parse(&p, &bytes);
+        let main: Vec<_> = b.messages.iter().map(|m| m.uuid.as_str()).collect();
+        assert_eq!(main, ["ysu1", "ysu2:tool", "ysa2"]);
+        assert_eq!(b.usage.len(), 4, "every response still costs the session");
+        assert_eq!(b.edits.len(), 1, "and its edits are the session's");
+        let subs: Vec<_> = b
+            .sidechains
+            .iter()
+            .map(|s| {
+                let texts: Vec<_> = s.messages.iter().map(|m| m.text.as_str()).collect();
+                (s.session.id.as_str(), texts)
+            })
+            .collect();
+        assert_eq!(
+            subs,
+            [
+                (
+                    "sidechain-yca1",
+                    vec!["Read the parser module", "The parser is recursive descent."]
+                ),
+                (
+                    "sidechain-ycb1",
+                    vec!["Read the lexer module", "The lexer is table driven."]
+                ),
+            ]
+        );
+        for s in &b.sidechains {
+            assert_eq!(s.session.parent.as_deref(), Some("s-sidechains"));
+            assert_eq!(s.session.path, b.session.path);
+            assert!(
+                s.usage.is_empty() && s.edits.is_empty(),
+                "not counted twice"
+            );
+        }
+        assert_eq!(
+            b.sidechains[0].session.first_prompt.as_deref(),
+            Some("Read the parser module")
+        );
+        assert_eq!(
+            b.sidechains[0].session.started.as_deref(),
+            Some("2026-08-02T10:00:06.000Z")
+        );
+    }
+
+    #[test]
+    fn side_chain_records_without_parent_ids_follow_the_last_prompt() {
+        let (p, bytes) = fixture("s-sidechain.jsonl");
+        let b = parse(&p, &bytes);
+        assert_eq!(b.sidechains.len(), 1);
+        let ids: Vec<_> = b.sidechains[0]
+            .messages
+            .iter()
+            .map(|m| m.uuid.as_str())
+            .collect();
+        assert_eq!(ids, ["xsc1", "xsc2:thinking", "xsc3:tool", "xsc4"]);
+        // A sub-agent's own file holds no side chains of another.
+        let sub = Path::new("/x/proj/s-sidechain/subagents/agent-s1.jsonl");
+        assert!(parse(sub, &bytes).sidechains.is_empty());
     }
 
     #[test]

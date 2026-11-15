@@ -119,6 +119,10 @@ pub struct Batch {
     pub tasks: Vec<Task>,
     pub edits: Vec<FileEdit>,
     pub backups: Vec<Backup>,
+    /// Sub-agents whose records sit in this same file (older Claude Code), one session each,
+    /// with `parent` set. They hold their messages only: their usage and edits are already in
+    /// this batch, so they aren't counted twice.
+    pub sidechains: Vec<Batch>,
 }
 
 /// The files a Codex-style patch touches (`*** Add File:`, `*** Update File:`,
