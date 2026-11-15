@@ -94,7 +94,13 @@ fn record(b: &mut Batch, r: &Value, is_sub: bool, seen: &mut HashSet<String>) {
     if is_sub && s.parent.is_none() {
         s.parent = text_at(&r["sessionId"]);
     }
-    let uuid = text_at(&r["uuid"]);
+    // Older Claude Code versions wrote a sub-agent's records into the main transcript,
+    // marked as a side chain: its usage and edits are this session's, its messages aren't
+    // this session's conversation. A sub-agent's own file is all side chain.
+    let uuid = text_at(&r["uuid"]).filter(|_| is_sub || r["isSidechain"] != true);
+    if !is_sub && r["isSidechain"] == true && r["type"] == "user" {
+        return;
+    }
 
     match r["type"].as_str() {
         // Claude Code's file history: what each file was before the session changed it.
@@ -337,6 +343,24 @@ mod tests {
         assert!(b.messages[0].text.len() > crate::model::EXTRA_CAP - 2);
         let b = parse(Path::new("/x/s.jsonl"), &line.as_bytes()[..line.len() / 2]);
         assert!(b.messages.is_empty());
+    }
+
+    #[test]
+    fn side_chain_records_in_the_main_file_are_not_its_messages() {
+        let (p, bytes) = fixture("s-sidechain.jsonl");
+        let b = parse(&p, &bytes);
+        let ids: Vec<_> = b.messages.iter().map(|m| m.uuid.as_str()).collect();
+        assert_eq!(ids, ["su1", "sa1", "su2:tool", "sa2", "su3"]);
+        assert_eq!(
+            b.session.first_prompt.as_deref(),
+            Some("Find where the config is read")
+        );
+        // The sub-agent's responses still cost this session.
+        let usage: Vec<_> = b.usage.iter().map(|u| u.message_id.as_str()).collect();
+        assert_eq!(usage, ["msg_s1", "msg_sc1", "msg_sc2", "msg_s2"]);
+        // In a sub-agent's own file, every record is its own.
+        let sub = Path::new("/x/proj/s-sidechain/subagents/agent-s1.jsonl");
+        assert_eq!(parse(sub, &bytes).messages.len(), 9);
     }
 
     #[test]
