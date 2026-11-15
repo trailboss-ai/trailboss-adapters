@@ -350,7 +350,7 @@ mod tests {
         let (p, bytes) = fixture("s-sidechain.jsonl");
         let b = parse(&p, &bytes);
         let ids: Vec<_> = b.messages.iter().map(|m| m.uuid.as_str()).collect();
-        assert_eq!(ids, ["su1", "sa1", "su2:tool", "sa2", "su3"]);
+        assert_eq!(ids, ["xsu1", "xsa1", "xsu2:tool", "xsa2", "xsu3"]);
         assert_eq!(
             b.session.first_prompt.as_deref(),
             Some("Find where the config is read")
