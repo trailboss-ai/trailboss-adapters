@@ -349,6 +349,24 @@ mod tests {
     }
 
     #[test]
+    fn a_fork_keeps_the_ids_of_what_it_copied() {
+        let ids = |name: &str| -> Vec<String> {
+            let (p, bytes) = fixture(name);
+            parse(&p, &bytes)
+                .messages
+                .into_iter()
+                .map(|m| m.uuid)
+                .collect()
+        };
+        let (root, fork) = (ids("s-tree-root.jsonl"), ids("s-tree-fork.jsonl"));
+        assert_eq!(root[..4], fork[..4], "the copied records keep their ids");
+        assert_ne!(root[4], fork[4], "then each goes its own way");
+        let (p, bytes) = fixture("s-tree-root/subagents/agent-t1.jsonl");
+        let b = parse(&p, &bytes);
+        assert_eq!(b.session.parent.as_deref(), Some("s-tree-root"));
+    }
+
+    #[test]
     fn old_usage_without_cache_breakdown() {
         let line = br#"{"type":"assistant","uuid":"a","message":{"id":"m","model":"claude-x","content":[],"usage":{"input_tokens":1,"output_tokens":2,"cache_creation_input_tokens":30}}}"#;
         let b = parse(Path::new("/x/s.jsonl"), line);
