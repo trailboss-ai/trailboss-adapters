@@ -312,6 +312,8 @@ mod tests {
                 ("assistant", "g1"),
                 ("thinking", "g1:thinking"),
                 ("tool", "write_file-1:result"),
+                ("tool", "run_shell_command-2:result"),
+                ("tool", "run_shell_command-3:result"),
                 ("assistant", "g1"),
             ]
         );

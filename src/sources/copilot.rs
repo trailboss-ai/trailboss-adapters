@@ -351,6 +351,7 @@ mod tests {
                 ("assistant", "e-a1"),
                 ("tool", "call-1:result"),
                 ("tool", "call-3:result"),
+                ("tool", "call-4:result"),
                 ("assistant", "e-a2"),
                 ("user", "e-u2"),
                 ("assistant", "e-a3"),
